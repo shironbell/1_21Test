@@ -489,17 +489,5 @@ $(document).ready(function(){
 			}
 		});
 	}
-  (function() {
-// Do a ping to Kinvey whenever the button is clicked.
-var a = current_selection
-  var button = document.getElementById('ping');
-  button.addEventListener('click', function() {
-    var promise = Kinvey.DataStore.save('books', {author  : a ,title : "b"});
-    promise.then(function(response) {
-      alert('Kinvey Ping Success. Kinvey Service is alive, version: ' + response.version + ', response: ' + response.kinvey);
-    }, function(error) {
-      alert('Kinvey Ping Failed. Response: ' + error.description);
-    });
-  });
-}());   
+  
 });
