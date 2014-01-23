@@ -1,72 +1,298 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
-<link href="css/main.css" media="screen" rel="stylesheet" type="text/css" />
+<link href="css/main.css" media="screen" rel="stylesheet" type="text/css">
 <script type="text/javascript" src="js/jquery-latest.js"></script>
+<script type="text/javascript" src="js/customSelect.jquery.js"></script>
+<link href="js/jquery.simpledialog.0.1.css" rel="stylesheet" type="text/css">
+<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<--! <script src="js/EAN.js"></script> !-->
+<--!<script src="js/CODE128.js"></script>  !-->
+<--!<script src="js/jsBarcode.js"></script>     !-->
+    <script>
+      // Initialize Kinvey for use in your app.
+      Kinvey.init({
+        appKey    : 'kid_VeXlW6TPHi',
+        appSecret : '896f88d7a9214df0bd174fb4600813c1'
+      });
+    </script>
+<script>/**
+ * Copyright 2013 Kinvey, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+/* global $: true, Kinvey: true */
+(function() {
+  'use strict';
+
+  // Setup.
+  
+  // Initialize Kinvey.
+  var promise = Kinvey.init({
+    appKey    : 'kid_VeXlW6TPHi',
+    appSecret : '896f88d7a9214df0bd174fb4600813c1',
+    sync      : { enable: true, online: navigator.onLine }
+  }).then(function(activeUser) {
+    // Auto-generate the active user if not defined.
+    if(null === activeUser) {
+      return Kinvey.User.create();
+    }
+  }).then(null, function(error) {
+    status.trigger('error', error);
+  });
+    
+     
+		
+
+  // On/offline hooks.
+  document.addEventListener('offline', Kinvey.Sync.offline);
+  document.addEventListener('online', function() {
+    status.trigger('loading', 'Synchronizing…');
+    Kinvey.Sync.online().then(function() {
+      status.trigger('success');
+    }, function(error) {
+      status.trigger('error', error);
+    });
+  });
+
+  // Preseed data.
+  promise.then(function() {
+    list.trigger('update');
+  });
+
+  // Status.
+  var status = $('#status');
+  status.on({
+    error: function(e, data) {
+      var message = data instanceof Error ? data.message : data.description;
+      status.html(message).removeClass('alert-info alert-success').addClass('alert-danger');
+    },
+    loading: function(e, text) {
+      status.html(text || 'Loading…').removeClass('alert-danger alert-success').addClass('alert-info');
+    },
+    success: function(e, text) {
+      status.html(text || 'OK.').removeClass('alert-danger alert-info').addClass('alert-success');
+    }
+  });
+    
+    
+    
+	
+  // Add.
+  // ----
+  var add = $('#add');
+  add.on('submit', function(e) {
+    var button = add.find('button').attr('disabled', 'disabled');// Update UI.
+
+    // Retrieve the form data.
+    var data = { };
+    add.serializeArray().forEach(function(input) {
+      data[input.name] = input.value;
+    });
+
+    // Add the book.
+    status.trigger('loading');
+    Kinvey.DataStore.save('books', data).then(function() {
+      list.trigger('update');
+    }, function(error) {
+      status.trigger('error', error); 
+    }).then(function() {
+      // Restore UI.
+      add.trigger('reset');
+      button.removeAttr('disabled');
+    });
+
+    e.preventDefault();// Stop submit.
+  });
+
+  // List.
+  var list = $('#list');
+  var tpl  = $('#row-template').clone();
+  list.on('update', function(e, query) {
+    status.trigger('loading');
+    Kinvey.DataStore.find('books', query).then(function(books) {
+      // Update UI.
+      var content = books.map(function(book, index) {
+        var node = tpl.clone();
+
+        // Update data.
+        node.find('[data-placeholder="index"]').text(index + 1);
+        node.find('[data-placeholder="title"]').text(book.title);
+        node.find('[data-placeholder="author"]').text(book.author);
+        node.find('button').attr('data-book', book._id);
+
+        return node.html();
+      });
+      list.find('tbody').removeClass('hide').html(content);
+
+      status.trigger('success');
+    }, function(error) {
+      status.trigger('error', error);
+    });
+  });
+
+  // Filter.
+  var filter = $('#filter');
+  filter.on('submit', function(e) {
+    // Retrieve the form data.
+    var data = { };
+    filter.serializeArray().forEach(function(input) {
+      data[input.name] = input.value;
+    });
+
+    // Build the query.
+    var query = new Kinvey.Query().ascending(data.sort);
+    if('' !== data.search) {
+      // Offline database does not support the regex query operator. Fallback to
+      // equalTo.
+      var method = Kinvey.Sync.isOnline() ? 'matches' : 'equalTo';
+      query[method]('title',  data.search, { ignoreCase: true }).or()
+           [method]('author', data.search, { ignoreCase: true });
+    }
+    if('' !== data.limit) {
+      query.limit(data.limit);
+    }
+    list.trigger('update', query);
+
+    e.preventDefault();// Stop submit.
+  });
+
+  // Destroy.
+  list.on('click', '[data-action="shred"]', function() {
+    var button = $(this).attr('disabled', 'disabled');
+    var book   = button.data('book');
+
+    // Remove the book.
+    Kinvey.DataStore.destroy('books', book).then(function() {
+      list.trigger('update');
+    }, function(error) {
+      // Restore UI.
+      button.removeAttr('disabled');
+      status.trigger('error', error);
+    });
+  });
+   
+    
+    
+}());
+</script>
 <script type="text/javascript">
 // Place before js/mobile.js
 var panels = [];
-panels = [
+</script>
+<script type="text/javascript" src="js/mobile.js"></script>
+<script src="//da189i1jfloii.cloudfront.net/js/kinvey-html5-1.1.4.min.js"></script>
+   
+    
+<body class="has-js" quick-markup_injected="true">
+<noscript>
+</noscript>
+
+
+    
+    
+	<div id="container">
+		<header id="header">
+						
+			<nav>
+				<ul>
+					<li class="selected"><a href="index.html">Home</a></li>
+					<li><a href="choosegame.html">New Game</a></li>
+					<li><a href="results.html">Results</a></li>
+					<li><a href="">Account</a></li>
+					<li id="cart"><a class="viewcart" href="">Cart</a></li>
+				</ul>
+			</nav>
+		</header>
+	  
+	  <button id="ping">Ping Kinvey</button>
+		
+	<section class="gamescreen numberpicker game_picker" style="">
+		<aside class="padbot">
+			<div class="ballimg"></div>
+			<h1 class="powerball">Powerball</h1>
+		</aside>
+		<h1 class="gametypes recent">Standard — <span class="games">Game <span class="current">1</span> of <span class="total">4</span></span></h1>
+		<div id="number_picker_overlay" class="np_game_indicator">
+			<div>Game <span id="overlay_game_number">1</span></div>
+		</div>
+		<div class="number_pickers">
+		</div>
+		<div class="clear"></div>
+        
+        
+       
+
+		<footer>
+            
+        	<img id="barcode"/>
+            
+                <!-- Status. -->
+    
+    <!-- Add. -->
+    <form class="form-inline well" id="add" role="form">
+      <div class="form-group">
+        <label class="sr-only" for="title">Title</label>
+        <input autofocus required class="form-control" id="array" name="title" type="text" placeholder="Enter Title" />
+      </div>
+      <div class="form-group">
+        <label class="sr-only" for="author">Author</label>
+        <input required class="form-control" id="author" name="author" type="text" placeholder="Enter Author" />
+      </div>
+      <button class="btn btn-primary" type="submit">Place the book onto the shelf!</button>
+    </form>
+
+ 
+
+    
+
+
+            
+               
+               <p id="demo"></p>  
+               <p>&nbsp;</p>
+		
+			<button class="reset">Reset</button>
+			<button class="quickpick">Quickpick</button>
+			<button class="next">Submit</button>
+         
+            
+
+
+	  </footer>
+	</section>
+	<script type="text/javascript">
+	//count($set_counts)
+		panels = [
 			[40, 6, 'Numbers']
 			,[20, 1, 'Powerball']
 		];
-</script>
-<script>
-
-</script>
-    
-    <script type="text/javascript">
-function Msg1(){
-  document.getElementById('myText').innerHTML = 'Thanks!';
-}
-function Msg2(){
-  document.getElementById('myText').innerHTML = 'Try message 1 again...';
-}
-</script>
-<script type="text/javascript" src="js/mobile.js"></script>
-</head>
-<body>
-<noscript>
-</noscript>
-<body class="has-js">
-<div id="container">
-<header id="header">
-<nav>
-<ul>
-<li class="selected"><a href="#home">Play</a></li>
-<li><a href="index.html">Results</a></li>
-<li><a href="index.html">Account</a></li>
-<li><a href="index.html">Log In</a></li>
-
-</ul>
-</nav>
-</header>
-<section class="gamescreen numberpicker game_options" style="display: none;">
-</footer>
-</section>
-<section class="gamescreen numberpicker game_picker" style="">
-<aside class="padbot">
-<div class="ballimg"></div>
-</aside>
-<h1 class="gametypes recent">&nbsp;</h1>
-<div id="number_picker_overlay" class="np_game_indicator">
-<div>Game <span id="overlay_game_number">1</span></div>
-</div>
-<div class="number_pickers">
-</div>
-   
-<div class="clear"></div>
+		</script>
+        
+        
 <footer>
-	<button class="prev">&lt;</button>
-<button class="reset">Reset</button>
-<button class="quickpick">Quickpick</button>
-<a href="mypicks.html"><button class="next">&gt;</button></a>
-
-<script type="text/javascript" src="js/customSelect.js"></script>
-
-<script src="//da189i1jfloii.cloudfront.net/js/kinvey-html5-1.1.4.min.js"></script>
-
+				<ul class="welcome_links">
+			<li><p class="trigger">
+					
+				</p>
+				<div class="toggle_container" style="display: none;">
+					<div class="block">
+					
+					</div>
+				</div>
+			</li>
+			
+		</ul>
 </footer>
-</section>
-</body></html>
+</div>
+
+        
+
