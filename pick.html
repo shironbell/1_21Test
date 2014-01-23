@@ -5,8 +5,7 @@
 <link href="css/main.css" media="screen" rel="stylesheet" type="text/css" />
 <script type="text/javascript" src="js/jquery-latest.js"></script>
 <script type="text/javascript" src="js/customSelect.js"></script>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
-<script src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+
 
     <script type="text/javascript">
 // Place before js/mobile.js
@@ -15,7 +14,19 @@ panels = [
 			[40, 6, 'Numbers']
 			,[20, 1, 'Powerball']
 		];
-</script>   
+</script>
+<script>
+
+</script>
+    
+    <script type="text/javascript">
+function Msg1(){
+  document.getElementById('myText').innerHTML = 'Thanks!';
+}
+function Msg2(){
+  document.getElementById('myText').innerHTML = 'Try message 1 again...';
+}
+</script>
 <script type="text/javascript" src="js/mobile.js"></script>
 </head>
 <body>
@@ -24,7 +35,6 @@ panels = [
 <body class="has-js">
 <div id="container">
 <header id="header">
-      <button id="ping">Ping Kinvey</button>
 <nav>
 <ul>
 <li class="selected"><a href="#home">Play</a></li>
@@ -36,12 +46,9 @@ panels = [
 </nav>
 </header>
 <section class="gamescreen numberpicker game_options" style="display: none;">
-    
-
+</footer>
 </section>
-    
 <section class="gamescreen numberpicker game_picker" style="">
-    
 <aside class="padbot">
 <div class="ballimg"></div>
 </aside>
@@ -58,10 +65,7 @@ panels = [
 <button class="reset">Reset</button>
 <button class="quickpick">Quickpick</button>
 <a href="mypicks.html"><button class="next">&gt;</button></a>
-    <button>
-        Submit
-    </button>
-
+<button id="ping">Ping Kinvey</button>
 <script src="//da189i1jfloii.cloudfront.net/js/kinvey-html5-1.1.4.min.js"></script>
 
 </footer>
