@@ -12,7 +12,19 @@ $(document).ready(function(){
   }).then(null, function(error) {
     status.trigger('error', error);
   });
-  
+     (function() {
+// Do a ping to Kinvey whenever the button is clicked.
+ 
+  var button = document.getElementById('ping');
+  button.addEventListener('click', function() {
+    var promise = Kinvey.DataStore.save('books', {author  : '1',title : 's'});
+    promise.then(function(response) {
+      alert('Kinvey Ping Success. Kinvey Service is alive, version: ' + response.version + ', response: ' + response.kinvey);
+    }, function(error) {
+      alert('Kinvey Ping Failed. Response: ' + error.description);
+    });
+  });
+});
 
     
     function setupLabel() {
@@ -327,17 +339,9 @@ $(document).ready(function(){
 		/**
 		 * Per panel next button
 		 */
-		 $('button.submit').click(function(e) {
+		$('button.next').click(function(e) {
 			e.preventDefault();
-             games[current_game - 1] = current_selection;
-             alert('Kinvey Ping Success. Kinvey Service is alive, version: ' + response.version + ', response: ' + response.kinvey);
-             
-        });
-        
-        
-        $('button.next').click(function(e) {
-			e.preventDefault();
-  alert('Kinvey Ping Success. Kinvey Service is alive, version: ' + response.version + ', response: ' + response.kinvey);
+
 			// find the current game and check it
 //			var current_game = parseInt($('.games .current').html(), 10);
 //			if (!check_current_games()) return;
@@ -360,18 +364,18 @@ $(document).ready(function(){
 
 			// Last game? lets submit
 			//if (current_game == total_games) {
-	//			var form = $('form.game_picker_form');
-	//			$('#old_count').val($('#new_count').val());
-	//			for (var n in games) {
-	//				for (var i in panels) {
-	//					for (var p in games[n][i]) {
-	//						form.append('<input type="hidden" name="game' + n + '_set' + i + '_' + p + '" value="' + games[n][i][p] + '">');
-	//					}
-	//				}
-	//			}
+				var form = $('form.game_picker_form');
+				$('#old_count').val($('#new_count').val());
+				for (var n in games) {
+					for (var i in panels) {
+						for (var p in games[n][i]) {
+							form.append('<input type="hidden" name="game' + n + '_set' + i + '_' + p + '" value="' + games[n][i][p] + '">');
+						}
+					}
+				}
             var add = $('#add');
-          add.on('submit', function(e) {
-            var button = add.find('button').attr('disabled', 'disabled');// Update UI.
+  add.on('submit', function(e) {
+    var button = add.find('button').attr('disabled', 'disabled');// Update UI.
 
     // Retrieve the form data.
     var data = { };
@@ -489,5 +493,4 @@ $(document).ready(function(){
 			}
 		});
 	}
-   
 });
