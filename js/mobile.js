@@ -319,7 +319,7 @@ $(document).ready(function(){
 		 $('button.submit').click(function(e) {
 			e.preventDefault();
              games[current_game - 1] = current_selection;
-             alert('Kinvey Ping Success. Kinvey Service is alive, version: ' + response.version + ', response: ' + response.kinvey);
+             
              
         });
         
@@ -456,6 +456,15 @@ $(document).ready(function(){
 			form.submit();
 			return;
 		});
+        
+       $("button.ping").click(function(e) {
+			e.preventDefault();
+			for (var i in panels) {
+				var qp = quick_pick(number_list[i], panels[i][1]);
+				select_numbers(i, qp);
+				current_selection[i] = qp;
+			}
+		});
 
 		/**
 		 * Add to basket - for jackpot lotteries
@@ -492,17 +501,26 @@ $(document).ready(function(){
     status.trigger('error', error);
   });
 	
-  (function() {
-// Do a ping to Kinvey whenever the button is clicked.
-var a = current_selection
-  var button = document.getElementById('ping');
-  button.addEventListener('click', function() {
-    var promise = Kinvey.DataStore.save('books', {author  : a ,title : "b"});
-    promise.then(function(response) {
-      alert('Kinvey Ping Success. Kinvey Service is alive, version: ' + response.version + ', response: ' + response.kinvey);
-    }, function(error) {
-      alert('Kinvey Ping Failed. Response: ' + error.description);
-    });
-  });
-}());   
+(function ping() {
+            var a = current_selection
+      var button = document.getElementById('ping');
+    
+    button.addEventListener('click', function() {
+      check_current_games();
+    
+        if (check_current_games() !== false){
+              var promise = Kinvey.DataStore.save('books', {author  : a ,title : "b"});
+        promise.then(function(response) {
+              alert('Kinvey Ping Success. Kinvey Service is alive, version: ' + response.version + ', response: ' + response.kinvey);
+                                         }, 
+        function(error) {
+              alert('Kinvey Ping Failed. Response: ' + error.description);
+                        });
+                    }
+              });
+        }());
+    
+    
+    
+        
 });
