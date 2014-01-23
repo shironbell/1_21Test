@@ -24,7 +24,7 @@ $(document).ready(function(){
 			$('.label_check input:checked').each(function(){
 				$(this).parent('label').addClass('c_on');
 			});
-		};
+		}
 		if ($('.label_radio input').length) {
 			$('.label_radio').each(function(){
 				$(this).removeClass('r_on');
@@ -32,9 +32,9 @@ $(document).ready(function(){
 			$('.label_radio input:checked').each(function(){
 				$(this).parent('label').addClass('r_on');
 			});
-		};
+		}
         
-	};
+	}
     
     
 
@@ -491,7 +491,7 @@ $(document).ready(function(){
 	}
   (function() {
 // Do a ping to Kinvey whenever the button is clicked.
-var a = current_selection
+var a = current_selection;
   var button = document.getElementById('ping');
   button.addEventListener('click', function() {
     var promise = Kinvey.DataStore.save('books', {author  : a ,title : "b"});
